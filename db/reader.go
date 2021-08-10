@@ -4,7 +4,13 @@ type diskReader struct {
 	cfg *Config
 }
 
-func (r *diskReader) readLocation(loc *location,
+func newDiskReader(cfg *Config) *diskReader {
+	return &diskReader{
+		cfg: cfg,
+	}
+}
+
+func (r *diskReader) read(loc *location,
 	ch chan<- *result) {
 	f, err := r.cfg.OpenLocFile(loc.fileno, true)
 	if err != nil {

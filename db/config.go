@@ -14,6 +14,10 @@ type Config struct {
 	path string
 }
 
+func (c *Config) Check() bool {
+	return true
+}
+
 func (c *Config) GetValFilePath(no int) string {
 	basename := fmt.Sprintf("val%04d", no)
 	return path.Join(c.path, basename)
