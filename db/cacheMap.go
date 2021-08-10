@@ -1,90 +1,66 @@
 package db
 
-// prev <-> cur <-> next
-type storeNode struct {
+import (
+	"container/list"
+	"sync"
+)
+
+type cacheEntry struct {
 	key   string
-	value string
-	prev  *storeNode
-	next  *storeNode
-}
-
-func newStoreNode(key, value string) *storeNode {
-	sn := &storeNode{
-		key:   key,
-		value: value,
-	}
-	sn.prev = sn
-	sn.next = sn
-	return sn
-}
-
-func storeDel(sn *storeNode) {
-	sn.prev.next = sn.next
-	sn.next.prev = sn.prev
-}
-
-func storeIns(cur, sn *storeNode) *storeNode {
-	if cur == nil {
-		return sn
-	}
-	if sn == nil {
-		return cur
-	}
-	sn.next = cur.next
-	sn.prev = cur
-	cur.next = sn
-	return sn
+	value []byte
 }
 
 type cacheMap struct {
 	capacity int
-	size     int
-	store    *storeNode
-	locate   map[string]*storeNode
+	recent   *list.List
+	store    *sync.Map
+	mux      *sync.Mutex
 }
 
 func newCacheMap(capacity int) *cacheMap {
-	var cm = cacheMap{
+	return &cacheMap{
 		capacity: capacity,
-		size:     0,
-		locate:   make(map[string]*storeNode, capacity),
-		store:    nil,
+		recent:   list.New(),
+		store:    &sync.Map{},
+		mux:      &sync.Mutex{},
 	}
-	return &cm
 }
 
-func (c *cacheMap) get(key []byte) ([]byte, bool) {
-	sn, ok := c.locate[string(key)]
+func (c *cacheMap) get(key string) ([]byte, bool) {
+	iele, ok := c.store.Load(key)
 	if !ok {
-		return nil, ok
+		return nil, false
 	}
-	// if sn != c.store {
-	// 	storeDel(sn)
-	// 	c.store = storeIns(c.store, sn)
-	// }
-	return []byte(sn.value), ok
+	ele := iele.(*list.Element)
+	c.mux.Lock()
+	c.recent.MoveToFront(ele)
+	ent := ele.Value.(*cacheEntry)
+	c.mux.Unlock()
+	return ent.value, true
 }
 
-func (c *cacheMap) put(key, value []byte) {
-	skey := string(key)
-	svalue := string(value)
-	sn, ok := c.locate[skey]
-	if ok {
-		if sn == c.store {
-			return
-		}
-		storeDel(sn)
-		sn.value = svalue
-	} else {
-		c.size++
-		if c.size > c.capacity {
-			nsn := c.store.next
-			storeDel(nsn)
-			delete(c.locate, nsn.key)
-			c.size--
-		}
-		sn = newStoreNode(skey, svalue)
+func (c *cacheMap) add(key string, value []byte) {
+	ent := &cacheEntry{
+		key:   key,
+		value: value,
 	}
-	c.store = storeIns(c.store, sn)
-	c.locate[skey] = sn
+	iele, ok := c.store.Load(key)
+	if ok {
+		ele := iele.(*list.Element)
+		c.mux.Lock()
+		c.recent.MoveToFront(ele)
+		ele.Value = ent
+		c.mux.Unlock()
+	} else {
+		c.mux.Lock()
+		ele := c.recent.PushFront(ent)
+		c.mux.Unlock()
+		c.store.Store(key, ele)
+	}
+	if c.recent.Len() > c.capacity {
+		c.mux.Lock()
+		ient := c.recent.Remove(c.recent.Back())
+		c.mux.Unlock()
+		c.store.Delete(ient.(*cacheEntry).key)
+	}
 }
