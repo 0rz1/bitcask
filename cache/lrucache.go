@@ -14,7 +14,7 @@ type LRUCache struct {
 
 var _ Cache = &LRUCache{}
 
-func newLRUCache(capacity int) *LRUCache {
+func NewLRUCache(capacity int) *LRUCache {
 	return &LRUCache{
 		capacity: capacity,
 		recent:   list.New(),

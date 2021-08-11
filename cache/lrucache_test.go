@@ -7,7 +7,7 @@ import (
 
 func TestLRUCache(t *testing.T) {
 	capacity := 2
-	cm := newLRUCache(capacity)
+	cm := NewLRUCache(capacity)
 	cases := []struct {
 		key   string
 		value string
@@ -59,7 +59,7 @@ func BenchmarkLRUCacheParallel_R70(b *testing.B) {
 
 func benchmarkLRUCache(b *testing.B, readFreq float32) {
 	capacity := 50
-	cm := newLRUCache(capacity)
+	cm := NewLRUCache(capacity)
 	k := 0
 	for i := 0; i < b.N; i++ {
 		k += (rand.Intn(5) - 2)
@@ -75,7 +75,7 @@ func benchmarkLRUCache(b *testing.B, readFreq float32) {
 
 func benchmarkLRUCacheParallel(b *testing.B, readFreq float32) {
 	capacity := 50
-	cm := newLRUCache(capacity)
+	cm := NewLRUCache(capacity)
 	b.RunParallel(func(p *testing.PB) {
 		k := 0
 		for p.Next() {
