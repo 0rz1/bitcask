@@ -1,7 +1,6 @@
 package bitcask
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/0rz1/bitcask/cache"
@@ -11,23 +10,13 @@ func TestCacheOption(t *testing.T) {
 	opt := &CacheOption{
 		Capacity: 10,
 	}
-	if db, err := Open("", opt); err == nil {
+	db := &DB{cxt: &context{}}
+	if err := opt.custom(db); err == nil {
 		lruc := db.cache.(*cache.LRUCache)
 		if lruc.Capacity() != opt.Capacity {
 			t.Error()
 		}
 	} else {
-		t.Error()
-	}
-	if db, err := Open(""); err == nil {
-		lruc := db.cache.(*cache.LRUCache)
-		if lruc.Capacity() != defaultCacheOption.Capacity {
-			t.Error()
-		}
-	} else {
-		t.Error()
-	}
-	if _, err := Open("", opt, opt); !errors.Is(err, ErrDuplicateOption) {
 		t.Error()
 	}
 }
@@ -38,7 +27,8 @@ func TestLimitOption(t *testing.T) {
 		MaxKeySize:   10001,
 		MaxValueSize: 10002,
 	}
-	if db, err := Open("", opt); err == nil {
+	db := &DB{cxt: &context{}}
+	if err := opt.custom(db); err == nil {
 		if db.cxt.max_filesize != opt.MaxFileSize {
 			t.Error()
 		} else if db.cxt.max_keysize != opt.MaxKeySize {
@@ -47,37 +37,6 @@ func TestLimitOption(t *testing.T) {
 			t.Error()
 		}
 	} else {
-		t.Error()
-	}
-	if db, err := Open(""); err == nil {
-		if db.cxt.max_filesize != defaultLimitOption.MaxFileSize {
-			t.Error()
-		} else if db.cxt.max_keysize != defaultLimitOption.MaxKeySize {
-			t.Error()
-		} else if db.cxt.max_valuesize != defaultLimitOption.MaxValueSize {
-			t.Error()
-		}
-	} else {
-		t.Error()
-	}
-	if _, err := Open("", opt, opt); !errors.Is(err, ErrDuplicateOption) {
-		t.Error()
-	}
-}
-
-func TestOptions(t *testing.T) {
-	opt1 := &CacheOption{
-		Capacity: 10,
-	}
-	opt2 := &LimitOption{
-		MaxFileSize:  10000,
-		MaxKeySize:   10001,
-		MaxValueSize: 10002,
-	}
-	if _, err := Open("", opt1, opt2); err != nil {
-		t.Error()
-	}
-	if _, err := Open(""); err != nil {
 		t.Error()
 	}
 }
