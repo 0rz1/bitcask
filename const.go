@@ -1,7 +1,5 @@
 package bitcask
 
-import "errors"
-
 type FileType int
 
 const (
@@ -9,15 +7,6 @@ const (
 	FT_Location
 	FT_Data
 )
-
-var ErrDuplicateOption = errors.New("duplicate type option")
-var ErrDiskRD = errors.New("disk read error")
-var ErrDiskWR = errors.New("disk write error")
-var ErrDiskUnReady = errors.New("disk unready")
-
-var ErrCxtHasDir = errors.New("folder: has dir")
-var ErrCxtInvalidName = errors.New("folder: invalid name")
-var ErrCxtInconsistency = errors.New("folder: inconsistency")
 
 var locSeqHeader = []byte{0xA0, 0xF2, 0x0B}
 
@@ -28,6 +17,6 @@ var defaultLimitOption = &LimitOption{
 	MaxValueSize: 100,
 }
 var defaultDiskOption = &DiskOption{
-	readerCnt: 4,
-	loaderCnt: 4,
+	ReaderCnt: 4,
+	LoaderCnt: 4,
 }

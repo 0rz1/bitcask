@@ -64,12 +64,12 @@ func (opt *LimitOption) custom(db *DB) error {
 }
 
 type DiskOption struct {
-	readerCnt int
-	loaderCnt int
+	ReaderCnt int
+	LoaderCnt int
 }
 
 func (opt *DiskOption) custom(db *DB) error {
-	if db.diskOpt.readerCnt != 0 {
+	if db.diskOpt.ReaderCnt == 0 {
 		db.diskOpt = *opt
 		return nil
 	} else {

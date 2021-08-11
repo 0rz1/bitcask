@@ -29,11 +29,11 @@ func (c *context) check() error {
 	locs := []int{}
 	for _, f := range fs {
 		if f.IsDir() {
-			return ErrCxtHasDir
+			return ErrCxtInvalid
 		}
 		ft, no := uGetFTAndNo(f.Name())
 		if ft == FT_Invalid || no < 0 {
-			return ErrCxtInvalidName
+			return ErrCxtInvalid
 		} else if ft == FT_Data {
 			dats = append(dats, no)
 		} else if ft == FT_Location {

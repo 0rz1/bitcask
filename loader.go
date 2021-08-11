@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/0rz1/bitcask/set"
 )
@@ -20,30 +21,36 @@ func newLoader(cxt *context) *loader {
 	}
 }
 
-func (l *loader) load(set *set.Set, loaderCnt int) error {
+func (l *loader) load(set *set.Set, loaderCnt int) (err error) {
+	wg := sync.WaitGroup{}
 	fq := make(chan *os.File)
 	defer close(fq)
-	eq := make(chan error)
 	for i := 0; i < loaderCnt; i++ {
 		go func() {
 			for f := range fq {
-				eq <- loadFile(f, set, l.cxt)
+				if err != nil {
+					e := loadFile(f, set, l.cxt)
+					if e != nil {
+						err = e
+					}
+				}
+				wg.Done()
 			}
 		}()
 	}
 	for _, no := range l.cxt.filenos {
-		if f, err := uOpen(FT_Location, no, l.cxt); err != nil {
-			return err
+		if err != nil {
+			break
+		}
+		if f, e := uOpen(FT_Location, no, l.cxt); e != nil {
+			return e
 		} else {
+			wg.Add(1)
 			fq <- f
 		}
 	}
-	for e := range eq {
-		if e != nil {
-			return e
-		}
-	}
-	return nil
+	wg.Wait()
+	return
 }
 
 func loadFile(f *os.File, set *set.Set, cxt *context) (err error) {

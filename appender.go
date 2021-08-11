@@ -17,19 +17,24 @@ type appendFile struct {
 func (a *appendFile) prepared() bool {
 	return a.freshed && a.aligned
 }
-func (a *appendFile) prepare() {
+func (a *appendFile) prepare() error {
 	if !a.freshed {
 		var err error
 		if a.file, err = uOpenAppend(a.ft, a.no, a.cxt); err == nil {
 			a.freshed = true
+		} else {
+			return err
 		}
 	}
 	if a.freshed && !a.aligned {
 		if off, err := a.file.Seek(0, 2); err == nil {
 			a.offset = int(off)
 			a.aligned = true
+		} else {
+			return err
 		}
 	}
+	return nil
 }
 func (a *appendFile) cut(no int) {
 	if a.prepared() {
@@ -40,10 +45,10 @@ func (a *appendFile) cut(no int) {
 	a.aligned = false
 	a.prepare()
 }
-func (a *appendFile) write(bs []byte) bool {
+func (a *appendFile) write(bs []byte) error {
 	n, err := a.file.Write(bs)
 	a.offset += n
-	return err == nil
+	return err
 }
 func (a *appendFile) exLimit(sz int) bool {
 	return a.offset+sz > a.cxt.max_filesize
@@ -60,9 +65,11 @@ func (a *appender) prepared() bool {
 	return a.loc.prepared() && a.dat.prepared()
 }
 
-func (a *appender) prepare() {
-	a.loc.prepare()
-	a.dat.prepare()
+func (a *appender) prepare() error {
+	if err := a.loc.prepare(); err != nil {
+		return err
+	}
+	return a.dat.prepare()
 }
 
 func newAppender(cxt *context) *appender {
@@ -76,8 +83,11 @@ func newAppender(cxt *context) *appender {
 }
 
 func (a *appender) append(key, value []byte) (*location, error) {
-	if a.prepare(); !a.prepared() {
-		return nil, ErrDiskUnReady
+	if !a.prepared() {
+		err := a.prepare()
+		if err != nil {
+			return nil, &Err{ErrNotReady, err}
+		}
 	}
 	locSize := locationSeqSize(len(key))
 	datSize := len(value)
@@ -85,8 +95,9 @@ func (a *appender) append(key, value []byte) (*location, error) {
 		a.no++
 		a.loc.cut(a.no)
 		a.dat.cut(a.no)
-		if a.prepare(); !a.prepared() {
-			return nil, ErrDiskUnReady
+		err := a.prepare()
+		if err != nil {
+			return nil, &Err{ErrNotReady, err}
 		}
 	}
 	loc := &location{
@@ -94,12 +105,12 @@ func (a *appender) append(key, value []byte) (*location, error) {
 		offset: a.dat.offset,
 		length: datSize,
 	}
-	if !a.dat.write(value) {
-		return nil, ErrDiskWR
+	if err := a.dat.write(value); err != nil {
+		return nil, &Err{ErrWrite, err}
 	}
 	locbs := loc.makeSeqWithKey(key)
-	if !a.loc.write(locbs) {
-		return nil, ErrDiskWR
+	if err := a.loc.write(locbs); err != nil {
+		return nil, &Err{ErrWrite, err}
 	}
 	return loc, nil
 }

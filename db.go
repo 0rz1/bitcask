@@ -1,6 +1,9 @@
 package bitcask
 
 import (
+	"fmt"
+	"sync"
+
 	"github.com/0rz1/bitcask/cache"
 	"github.com/0rz1/bitcask/set"
 )
@@ -25,6 +28,7 @@ type DB struct {
 	readQ   chan *comm
 	writeQ  chan *comm
 	diskOpt DiskOption
+	closeWG sync.WaitGroup
 }
 
 func Open(path string, options ...Option) (*DB, error) {
@@ -33,13 +37,14 @@ func Open(path string, options ...Option) (*DB, error) {
 		return nil, err
 	}
 	db := &DB{
-		cxt:    cxt,
-		set:    set.New(),
-		app:    newAppender(cxt),
-		reader: newReader(cxt),
-		loader: newLoader(cxt),
-		readQ:  make(chan *comm),
-		writeQ: make(chan *comm),
+		cxt:     cxt,
+		set:     set.New(),
+		app:     newAppender(cxt),
+		reader:  newReader(cxt),
+		loader:  newLoader(cxt),
+		readQ:   make(chan *comm, 1),
+		writeQ:  make(chan *comm, 1),
+		closeWG: sync.WaitGroup{},
 	}
 	for _, opt := range options {
 		if err := opt.custom(db); err != nil {
@@ -52,25 +57,27 @@ func Open(path string, options ...Option) (*DB, error) {
 	if db.cxt.max_filesize == 0 {
 		defaultLimitOption.custom(db)
 	}
-	if db.diskOpt.readerCnt == 0 {
+	if db.diskOpt.ReaderCnt == 0 {
 		defaultDiskOption.custom(db)
 	}
-	if err := db.loader.load(db.set, db.diskOpt.loaderCnt); err != nil {
+	if err := db.loader.load(db.set, db.diskOpt.LoaderCnt); err != nil {
 		return nil, err
 	}
 	db.start()
 	return db, nil
 }
 
-func (db *DB) GetSingle(key string) (string, error) {
+func (db *DB) Get(key string) (string, error) {
 	if v, ok := db.cache.Get(key); ok {
 		return v.(string), nil
 	}
 	if comp, ok := db.set.Get(key); ok {
 		loc := comp.(*location)
-		bs := db.read(loc)
-		if len(bs) == 0 {
-			return "", ErrDiskRD
+		bs, err := db.read(loc)
+		if err != nil {
+			fmt.Println(*loc)
+			fmt.Println(err)
+			return "", err
 		}
 		v := string(bs)
 		db.cache.Add(key, v)
@@ -79,7 +86,7 @@ func (db *DB) GetSingle(key string) (string, error) {
 	return "", nil
 }
 
-func (db *DB) AddSingle(key, value string) error {
+func (db *DB) Add(key, value string) error {
 	loc, err := db.write([]byte(key), []byte(value))
 	if err != nil {
 		return err
@@ -89,14 +96,15 @@ func (db *DB) AddSingle(key, value string) error {
 	return nil
 }
 
-func (db *DB) read(loc *location) []byte {
+func (db *DB) read(loc *location) ([]byte, error) {
 	res := make(chan *comm)
 	c := &comm{
 		loc: loc,
 		res: res,
 	}
 	db.readQ <- c
-	return (<-res).value
+	r := <-res
+	return r.value, r.err
 }
 
 func (db *DB) write(key, value []byte) (*location, error) {
@@ -114,22 +122,26 @@ func (db *DB) write(key, value []byte) (*location, error) {
 func (db *DB) Close() {
 	close(db.readQ)
 	close(db.writeQ)
+	db.closeWG.Wait()
 }
 
 func (db *DB) start() {
-	for i := 0; i < db.diskOpt.readerCnt; i++ {
+	for i := 0; i < db.diskOpt.ReaderCnt; i++ {
+		db.closeWG.Add(1)
 		go func() {
 			for c := range db.readQ {
-				c.value = db.reader.read(c.loc)
-				c.err = nil
+				c.value, c.err = db.reader.read(c.loc)
 				c.res <- c
 			}
+			db.closeWG.Done()
 		}()
 	}
+	db.closeWG.Add(1)
 	go func() {
 		for c := range db.writeQ {
 			c.loc, c.err = db.app.append(c.key, c.value)
 			c.res <- c
 		}
+		db.closeWG.Done()
 	}()
 }
