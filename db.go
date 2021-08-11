@@ -11,7 +11,7 @@ type DB struct {
 	set   *set.Set
 }
 
-func New(path string, options ...Option) (*DB, error) {
+func NewDB(path string, options ...Option) (*DB, error) {
 	cxt := &context{path: path}
 	db := &DB{
 		cxt: cxt,

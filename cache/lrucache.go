@@ -23,6 +23,10 @@ func NewLRUCache(capacity int) *LRUCache {
 	}
 }
 
+func (c *LRUCache) Capacity() int {
+	return c.capacity
+}
+
 func (c *LRUCache) Get(key Key) (interface{}, bool) {
 	iele, ok := c.store.Load(key)
 	if !ok {
