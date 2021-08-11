@@ -20,7 +20,7 @@ func (a *appendFile) prepared() bool {
 func (a *appendFile) prepare() {
 	if !a.freshed {
 		var err error
-		if a.file, err = uOpen(a.ft, a.no, a.cxt); err == nil {
+		if a.file, err = uOpenAppend(a.ft, a.no, a.cxt); err == nil {
 			a.freshed = true
 		}
 	}
@@ -43,7 +43,7 @@ func (a *appendFile) cut(no int) {
 func (a *appendFile) write(bs []byte) bool {
 	n, err := a.file.Write(bs)
 	a.offset += n
-	return err != nil
+	return err == nil
 }
 func (a *appendFile) exLimit(sz int) bool {
 	return a.offset+sz > a.cxt.max_filesize
@@ -102,4 +102,13 @@ func (a *appender) append(key, value []byte) (*location, error) {
 		return nil, ErrDiskWR
 	}
 	return loc, nil
+}
+
+func (a *appender) close() {
+	if a.loc.file != nil {
+		a.loc.file.Close()
+	}
+	if a.dat.file != nil {
+		a.dat.file.Close()
+	}
 }

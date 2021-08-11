@@ -1,6 +1,10 @@
 package bitcask
 
-import "testing"
+import (
+	"io/ioutil"
+	"os"
+	"testing"
+)
 
 func TestGetPath(t *testing.T) {
 	cxt := &context{
@@ -17,6 +21,30 @@ func TestGetPath(t *testing.T) {
 	}
 	if uGetPath(FT_Location, 10001, cxt) != "abc/loc10001" {
 		t.Error()
+	}
+}
+
+func TestOpenFile(t *testing.T) {
+	path, err := ioutil.TempDir(".", "tmp")
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal()
+		}
+	}()
+	if err != nil {
+		t.Fatal()
+	}
+	cxt := &context{path: path}
+	if f, err := uOpenAppend(FT_Data, 1, cxt); err != nil {
+		t.Fatalf("%v", err)
+	} else {
+		f.Close()
+	}
+	if f, err := uOpen(FT_Data, 1, cxt); err != nil {
+		t.Fatalf("%v", err)
+	} else {
+		f.Close()
 	}
 }
 

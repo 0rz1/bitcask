@@ -21,7 +21,8 @@ func locationSeqSize(ksz int) int {
 	return len(locSeqHeader) + 12 + 4 + ksz + 4
 }
 
-func makeLocationAndKey(bs []byte) (loc location, key []byte, ok bool) {
+func makeLocationAndKey(bs []byte) (loc *location, key []byte, ok bool) {
+	loc = &location{}
 	//header + location(3*4) + len(4) + key + crc(4)
 	headerlen := len(locSeqHeader)
 	nokeySize := locationSeqSize(0)
