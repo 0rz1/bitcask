@@ -28,7 +28,7 @@ func (l *loader) load(set *set.Set, loaderCnt int) (err error) {
 	for i := 0; i < loaderCnt; i++ {
 		go func() {
 			for f := range fq {
-				if err != nil {
+				if err == nil {
 					e := loadFile(f, set, l.cxt)
 					if e != nil {
 						err = e
@@ -55,7 +55,6 @@ func (l *loader) load(set *set.Set, loaderCnt int) (err error) {
 
 func loadFile(f *os.File, set *set.Set, cxt *context) (err error) {
 	defer f.Close()
-
 	hlen := len(locSeqHeader)
 	bufferSize := 4096
 	maxLocSeqSize := locationSeqSize(cxt.max_keysize)
@@ -118,6 +117,7 @@ func loadFile(f *os.File, set *set.Set, cxt *context) (err error) {
 				buffer[off : off+length])
 			if ok {
 				set.Add(string(key), loc)
+				// fmt.Println(loc)
 				off += length
 			} else {
 				off++

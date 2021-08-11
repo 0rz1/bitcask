@@ -29,6 +29,7 @@ type DB struct {
 	writeQ  chan *comm
 	diskOpt DiskOption
 	closeWG sync.WaitGroup
+	closed  bool
 }
 
 func Open(path string, options ...Option) (*DB, error) {
@@ -68,6 +69,9 @@ func Open(path string, options ...Option) (*DB, error) {
 }
 
 func (db *DB) Get(key string) (string, error) {
+	if len(key) > db.cxt.max_keysize {
+		return "", ErrKeyLenTooLong
+	}
 	if v, ok := db.cache.Get(key); ok {
 		return v.(string), nil
 	}
@@ -83,10 +87,16 @@ func (db *DB) Get(key string) (string, error) {
 		db.cache.Add(key, v)
 		return v, nil
 	}
-	return "", nil
+	return "", ErrKeyNotFound
 }
 
 func (db *DB) Add(key, value string) error {
+	if len(key) > db.cxt.max_keysize {
+		return ErrKeyLenTooLong
+	}
+	if len(value) > db.cxt.max_valuesize {
+		return ErrValueLenTooLong
+	}
 	loc, err := db.write([]byte(key), []byte(value))
 	if err != nil {
 		return err
@@ -120,9 +130,14 @@ func (db *DB) write(key, value []byte) (*location, error) {
 }
 
 func (db *DB) Close() {
-	close(db.readQ)
-	close(db.writeQ)
-	db.closeWG.Wait()
+	if !db.closed {
+		close(db.readQ)
+		close(db.writeQ)
+		db.closeWG.Wait()
+		db.reader.close()
+		db.app.close()
+		db.closed = true
+	}
 }
 
 func (db *DB) start() {

@@ -24,3 +24,7 @@ func (r *reader) read(loc *location) ([]byte, error) {
 		return bs, nil
 	}
 }
+
+func (r *reader) close() {
+
+}

@@ -23,6 +23,10 @@ func (e *Err) Unwrap() error {
 
 var ErrDuplicateOption = errors.New("duplicate option")
 
+var ErrKeyNotFound = errors.New("not found key")
+var ErrKeyLenTooLong = errors.New("key too long")
+var ErrValueLenTooLong = errors.New("value too long")
+
 var ErrRead = errors.New("read")
 var ErrWrite = errors.New("write")
 var ErrNotReady = errors.New("not ready")
