@@ -40,7 +40,7 @@ func (w *diskWriter) write(key, value []byte, ch chan<- *result) {
 	if w.refresh(); w.outdated() {
 		return
 	}
-	seqSize := LocationSeqSize(len(key))
+	seqSize := locationSeqSize(len(key))
 	if int(w.locOff)+seqSize > MaxFileSize ||
 		int(w.valOff)+len(value) > MaxFileSize {
 		if w.locOff == 0 && w.valOff == 0 {

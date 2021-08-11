@@ -17,10 +17,10 @@ type location struct {
 	length int
 }
 
-func MakeLocationAndKey(bs []byte) (loc location, key []byte, ok bool) {
+func makeLocationAndKey(bs []byte) (loc location, key []byte, ok bool) {
 	//header + location(3*4) + len(4) + key + crc(4)
 	headerlen := len(locationHeader)
-	nokeySize := LocationSeqSize(0)
+	nokeySize := locationSeqSize(0)
 	if len(bs) <= nokeySize || !bytes.Equal(bs[:headerlen], locationHeader) {
 		return
 	}
@@ -41,14 +41,14 @@ func MakeLocationAndKey(bs []byte) (loc location, key []byte, ok bool) {
 	return
 }
 
-func LocationSeqSize(ksz int) int {
+func locationSeqSize(ksz int) int {
 	//header + location(3*4) + len(4) + key + crc(4)
 	return len(locationHeader) + 12 + 4 + ksz + 4
 }
 
 func (l *location) MakeSeqWithKey(key []byte) []byte {
 	//header + location(3*4) + len(4) + key + crc(4)
-	size := LocationSeqSize(len(key))
+	size := locationSeqSize(len(key))
 	bs := make([]byte, size)
 	copy(bs, locationHeader)
 	off := len(locationHeader)

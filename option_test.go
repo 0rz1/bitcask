@@ -10,7 +10,7 @@ func TestCacheOption(t *testing.T) {
 	opt := &CacheOption{
 		Capacity: 10,
 	}
-	if db, err := NewDB("", opt); err == nil {
+	if db, err := Open("", opt); err == nil {
 		lruc := db.cache.(*cache.LRUCache)
 		if lruc.Capacity() != opt.Capacity {
 			t.Error()
@@ -18,7 +18,7 @@ func TestCacheOption(t *testing.T) {
 	} else {
 		t.Error()
 	}
-	if db, err := NewDB(""); err == nil {
+	if db, err := Open(""); err == nil {
 		lruc := db.cache.(*cache.LRUCache)
 		if lruc.Capacity() != defaultCacheOption.Capacity {
 			t.Error()
@@ -26,7 +26,7 @@ func TestCacheOption(t *testing.T) {
 	} else {
 		t.Error()
 	}
-	if _, err := NewDB("", opt, opt); err != ErrDuplicateOption {
+	if _, err := Open("", opt, opt); err != ErrDuplicateOption {
 		t.Error()
 	}
 }
@@ -37,7 +37,7 @@ func TestLimitOption(t *testing.T) {
 		MaxKeySize:   10001,
 		MaxValueSize: 10002,
 	}
-	if db, err := NewDB("", opt); err == nil {
+	if db, err := Open("", opt); err == nil {
 		if db.cxt.max_filesize != opt.MaxFileSize {
 			t.Error()
 		} else if db.cxt.max_keysize != opt.MaxKeySize {
@@ -48,7 +48,7 @@ func TestLimitOption(t *testing.T) {
 	} else {
 		t.Error()
 	}
-	if db, err := NewDB(""); err == nil {
+	if db, err := Open(""); err == nil {
 		if db.cxt.max_filesize != defaultLimitOption.MaxFileSize {
 			t.Error()
 		} else if db.cxt.max_keysize != defaultLimitOption.MaxKeySize {
@@ -59,7 +59,7 @@ func TestLimitOption(t *testing.T) {
 	} else {
 		t.Error()
 	}
-	if _, err := NewDB("", opt, opt); err != ErrDuplicateOption {
+	if _, err := Open("", opt, opt); err != ErrDuplicateOption {
 		t.Error()
 	}
 }
@@ -73,10 +73,10 @@ func TestOptions(t *testing.T) {
 		MaxKeySize:   10001,
 		MaxValueSize: 10002,
 	}
-	if _, err := NewDB("", opt1, opt2); err != nil {
+	if _, err := Open("", opt1, opt2); err != nil {
 		t.Error()
 	}
-	if _, err := NewDB(""); err != nil {
+	if _, err := Open(""); err != nil {
 		t.Error()
 	}
 }
