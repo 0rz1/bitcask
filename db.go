@@ -24,7 +24,7 @@ func Open(path string, options ...Option) (*DB, error) {
 		set:    set.New(),
 		app:    newAppender(cxt),
 		reader: newReader(cxt),
-		loader: &loader{cxt: cxt},
+		loader: newLoader(cxt),
 	}
 	for _, opt := range options {
 		if err := opt.custom(db); err != nil {
@@ -36,6 +36,9 @@ func Open(path string, options ...Option) (*DB, error) {
 	}
 	if db.cxt.max_filesize == 0 {
 		defaultLimitOption.custom(db)
+	}
+	if err := db.loader.load(db.set); err != nil {
+		return nil, err
 	}
 	return db, nil
 }

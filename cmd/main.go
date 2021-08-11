@@ -1,17 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 )
 
 func main() {
-	q, err := ioutil.TempDir(".", "xxx")
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(q)
-		defer os.RemoveAll(q)
-	}
+	fmt.Println(errors.Is(nil, errors.New("123")))
 }
