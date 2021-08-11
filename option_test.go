@@ -1,6 +1,7 @@
 package bitcask
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/0rz1/bitcask/cache"
@@ -26,7 +27,7 @@ func TestCacheOption(t *testing.T) {
 	} else {
 		t.Error()
 	}
-	if _, err := Open("", opt, opt); err != ErrDuplicateOption {
+	if _, err := Open("", opt, opt); !errors.Is(err, ErrDuplicateOption) {
 		t.Error()
 	}
 }
@@ -59,7 +60,7 @@ func TestLimitOption(t *testing.T) {
 	} else {
 		t.Error()
 	}
-	if _, err := Open("", opt, opt); err != ErrDuplicateOption {
+	if _, err := Open("", opt, opt); !errors.Is(err, ErrDuplicateOption) {
 		t.Error()
 	}
 }

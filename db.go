@@ -6,16 +6,25 @@ import (
 )
 
 type DB struct {
-	cxt   *context
-	cache cache.Cache
-	set   *set.Set
+	cxt    *context
+	cache  cache.Cache
+	set    *set.Set
+	app    *appender
+	reader *reader
+	loader *loader
 }
 
 func Open(path string, options ...Option) (*DB, error) {
 	cxt := &context{path: path}
+	if err := cxt.check(); err != nil {
+		return nil, err
+	}
 	db := &DB{
-		cxt: cxt,
-		set: set.New(),
+		cxt:    cxt,
+		set:    set.New(),
+		app:    newAppender(cxt),
+		reader: newReader(cxt),
+		loader: &loader{cxt: cxt},
 	}
 	for _, opt := range options {
 		if err := opt.custom(db); err != nil {
@@ -35,12 +44,29 @@ func (db *DB) Close() {
 
 }
 
-func (db *DB) Get(key string) (value string, err error) {
-
-	return
+func (db *DB) GetSingle(key string) (string, error) {
+	if v, ok := db.cache.Get(key); ok {
+		return v.(string), nil
+	}
+	if comp, ok := db.set.Get(key); ok {
+		loc := comp.(*location)
+		bs := db.reader.read(loc)
+		if len(bs) == 0 {
+			return "", ErrDiskRD
+		}
+		v := string(bs)
+		db.cache.Add(key, v)
+		return v, nil
+	}
+	return "", nil
 }
 
-func (db *DB) Add(key, value string) (err error) {
-
+func (db *DB) AddSingle(key, value string) error {
+	loc, err := db.app.append([]byte(key), []byte(value))
+	if err != nil {
+		return err
+	}
+	db.set.Add(key, loc)
+	db.cache.Add(key, value)
 	return nil
 }

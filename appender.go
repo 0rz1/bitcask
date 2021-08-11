@@ -31,7 +31,7 @@ func (a *appendFile) prepare() {
 		}
 	}
 }
-func (a *appendFile) check(no int) {
+func (a *appendFile) cut(no int) {
 	if a.prepared() {
 		a.file.Close()
 	}
@@ -68,24 +68,25 @@ func (a *appender) prepare() {
 func newAppender(cxt *context) *appender {
 	a := &appender{
 		cxt: cxt,
+		no:  cxt.maxno(),
 		loc: &appendFile{ft: FT_Location, cxt: cxt},
 		dat: &appendFile{ft: FT_Data, cxt: cxt},
 	}
 	return a
 }
 
-func (a *appender) append(key, value []byte) {
+func (a *appender) append(key, value []byte) (*location, error) {
 	if a.prepare(); !a.prepared() {
-		return
+		return nil, ErrDiskUnReady
 	}
 	locSize := locationSeqSize(len(key))
 	datSize := len(value)
 	if a.loc.exLimit(locSize) || a.dat.exLimit(datSize) {
 		a.no++
-		a.loc.check(a.no)
-		a.dat.check(a.no)
+		a.loc.cut(a.no)
+		a.dat.cut(a.no)
 		if a.prepare(); !a.prepared() {
-			return
+			return nil, ErrDiskUnReady
 		}
 	}
 	loc := &location{
@@ -94,10 +95,11 @@ func (a *appender) append(key, value []byte) {
 		length: datSize,
 	}
 	if !a.dat.write(value) {
-		return
+		return nil, ErrDiskWR
 	}
 	locbs := loc.makeSeqWithKey(key)
 	if !a.loc.write(locbs) {
-		return
+		return nil, ErrDiskWR
 	}
+	return loc, nil
 }

@@ -10,14 +10,15 @@ func newReader(cxt *context) *reader {
 	}
 }
 
-func (r *reader) read(loc *location) {
+func (r *reader) read(loc *location) []byte {
 	f, err := uOpen(FT_Location, loc.fileno, r.cxt)
 	if err != nil {
-		return
+		return nil
 	}
 	bs := make([]byte, loc.length)
 	_, err = f.ReadAt(bs, int64(loc.offset))
 	if err != nil {
-		return
+		return nil
 	}
+	return bs
 }
