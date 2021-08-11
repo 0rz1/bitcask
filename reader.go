@@ -15,6 +15,7 @@ func (r *reader) read(loc *location) []byte {
 	if err != nil {
 		return nil
 	}
+	defer f.Close()
 	bs := make([]byte, loc.length)
 	_, err = f.ReadAt(bs, int64(loc.offset))
 	if err != nil {

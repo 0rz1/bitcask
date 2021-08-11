@@ -47,7 +47,7 @@ func (c *context) check() error {
 	}
 	sort.Ints(dats)
 	sort.Ints(locs)
-	for i, _ := range dats {
+	for i := range dats {
 		if dats[i] != locs[i] {
 			return ErrCxtInconsistency
 		}
