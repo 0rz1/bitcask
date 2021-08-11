@@ -70,7 +70,6 @@ func (l *location) Compare(a *location) int {
 
 type locationMap struct {
 	store *sync.Map
-	mux   *sync.Map
 }
 
 func newLocationMap() *locationMap {
