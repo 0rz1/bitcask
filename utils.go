@@ -20,7 +20,7 @@ func uOpen(ft FileType, no int, c *context) (*os.File, error) {
 	return os.Open(uGetPath(ft, no, c))
 }
 
-func uOpenWrite(ft FileType, no int, c *context) (*os.File, error) {
+func uOpenAppend(ft FileType, no int, c *context) (*os.File, error) {
 	path := uGetPath(ft, no, c)
 	return os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 }
