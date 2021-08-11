@@ -20,14 +20,27 @@ func newLoader(cxt *context) *loader {
 	}
 }
 
-func (l *loader) load(set *set.Set) error {
+func (l *loader) load(set *set.Set, loaderCnt int) error {
+	fq := make(chan *os.File)
+	defer close(fq)
+	eq := make(chan error)
+	for i := 0; i < loaderCnt; i++ {
+		go func() {
+			for f := range fq {
+				eq <- loadFile(f, set, l.cxt)
+			}
+		}()
+	}
 	for _, no := range l.cxt.filenos {
-		f, err := uOpen(FT_Location, no, l.cxt)
-		if err != nil {
+		if f, err := uOpen(FT_Location, no, l.cxt); err != nil {
 			return err
+		} else {
+			fq <- f
 		}
-		if err := loadFile(f, set, l.cxt); err != nil {
-			return err
+	}
+	for e := range eq {
+		if e != nil {
+			return e
 		}
 	}
 	return nil

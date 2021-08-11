@@ -28,5 +28,6 @@ var defaultLimitOption = &LimitOption{
 	MaxValueSize: 100,
 }
 var defaultDiskOption = &DiskOption{
-	cnt: 4,
+	readerCnt: 4,
+	loaderCnt: 4,
 }

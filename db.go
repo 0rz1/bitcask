@@ -22,9 +22,9 @@ type DB struct {
 	reader *reader
 	loader *loader
 	//comm
-	readQ     chan *comm
-	writeQ    chan *comm
-	readerCnt int
+	readQ   chan *comm
+	writeQ  chan *comm
+	diskOpt DiskOption
 }
 
 func Open(path string, options ...Option) (*DB, error) {
@@ -52,10 +52,10 @@ func Open(path string, options ...Option) (*DB, error) {
 	if db.cxt.max_filesize == 0 {
 		defaultLimitOption.custom(db)
 	}
-	if db.readerCnt == 0 {
+	if db.diskOpt.readerCnt == 0 {
 		defaultDiskOption.custom(db)
 	}
-	if err := db.loader.load(db.set); err != nil {
+	if err := db.loader.load(db.set, db.diskOpt.loaderCnt); err != nil {
 		return nil, err
 	}
 	db.start()
@@ -117,13 +117,15 @@ func (db *DB) Close() {
 }
 
 func (db *DB) start() {
-	go func() {
-		for c := range db.readQ {
-			c.value = db.reader.read(c.loc)
-			c.err = nil
-			c.res <- c
-		}
-	}()
+	for i := 0; i < db.diskOpt.readerCnt; i++ {
+		go func() {
+			for c := range db.readQ {
+				c.value = db.reader.read(c.loc)
+				c.err = nil
+				c.res <- c
+			}
+		}()
+	}
 	go func() {
 		for c := range db.writeQ {
 			c.loc, c.err = db.app.append(c.key, c.value)
