@@ -27,3 +27,6 @@ var defaultLimitOption = &LimitOption{
 	MaxKeySize:   10,
 	MaxValueSize: 100,
 }
+var defaultDiskOption = &DiskOption{
+	cnt: 4,
+}

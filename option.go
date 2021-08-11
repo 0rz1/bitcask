@@ -12,6 +12,7 @@ type Option interface {
 
 var _ Option = &CacheOption{}
 var _ Option = &LimitOption{}
+var _ Option = &DiskOption{}
 
 type CacheOption struct {
 	Capacity int
@@ -60,4 +61,17 @@ func (opt *LimitOption) custom(db *DB) error {
 		return ErrDuplicateOption
 	}
 	return nil
+}
+
+type DiskOption struct {
+	cnt int
+}
+
+func (opt *DiskOption) custom(db *DB) error {
+	if db.readerCnt == 0 {
+		db.readerCnt = opt.cnt
+		return nil
+	} else {
+		return ErrDuplicateOption
+	}
 }
