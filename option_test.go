@@ -43,11 +43,11 @@ func TestLimitOption(t *testing.T) {
 
 func TestDiskOption(t *testing.T) {
 	opt := &DiskOption{
-		cnt: 10,
+		readerCnt: 10,
 	}
 	db := &DB{cxt: &context{}}
 	if err := opt.custom(db); err == nil {
-		if db.readerCnt != opt.cnt {
+		if db.diskOpt.readerCnt != opt.readerCnt {
 			t.Error()
 		}
 	} else {
