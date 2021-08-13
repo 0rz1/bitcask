@@ -51,7 +51,7 @@ func (a *appendFile) write(bs []byte) error {
 	return err
 }
 func (a *appendFile) exLimit(sz int) bool {
-	return a.offset+sz > a.cxt.max_filesize
+	return a.offset+sz > a.cxt.limitOpt.MaxFileSize
 }
 
 type appender struct {

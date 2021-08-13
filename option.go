@@ -36,27 +36,8 @@ type LimitOption struct {
 }
 
 func (opt *LimitOption) custom(db *DB) error {
-	if db.cxt.max_filesize == 0 {
-		db.cxt.max_filesize = opt.MaxFileSize
-		if db.cxt.max_filesize < 1000 {
-			return errors.New("filesize less than 1000")
-		}
-	} else {
-		return ErrDuplicateOption
-	}
-	if db.cxt.max_keysize == 0 {
-		db.cxt.max_keysize = opt.MaxKeySize
-		if db.cxt.max_keysize < 10 {
-			return errors.New("keysize less than 10")
-		}
-	} else {
-		return ErrDuplicateOption
-	}
-	if db.cxt.max_valuesize == 0 {
-		db.cxt.max_valuesize = opt.MaxValueSize
-		if db.cxt.max_valuesize < 100 {
-			return errors.New("valuesize less than 10")
-		}
+	if db.cxt.limitOpt.MaxFileSize == 0 {
+		db.cxt.limitOpt = *opt
 	} else {
 		return ErrDuplicateOption
 	}
@@ -69,8 +50,8 @@ type DiskOption struct {
 }
 
 func (opt *DiskOption) custom(db *DB) error {
-	if db.diskOpt.ReaderCnt == 0 {
-		db.diskOpt = *opt
+	if db.cxt.diskOpt.ReaderCnt == 0 {
+		db.cxt.diskOpt = *opt
 		return nil
 	} else {
 		return ErrDuplicateOption

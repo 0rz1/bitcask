@@ -1,6 +1,7 @@
 package bitcask
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -27,7 +28,6 @@ type DB struct {
 	//comm
 	readQ   chan *comm
 	writeQ  chan *comm
-	diskOpt DiskOption
 	closeWG sync.WaitGroup
 	closed  bool
 }
@@ -52,16 +52,14 @@ func Open(path string, options ...Option) (*DB, error) {
 			return nil, err
 		}
 	}
-	if db.cache == nil {
-		defaultCacheOption.custom(db)
+	for _, opt := range []Option{defaultCacheOption, defaultLimitOption, defaultDiskOption} {
+		if err := opt.custom(db); err != nil {
+			if !errors.Is(err, ErrDuplicateOption) {
+				return nil, err
+			}
+		}
 	}
-	if db.cxt.max_filesize == 0 {
-		defaultLimitOption.custom(db)
-	}
-	if db.diskOpt.ReaderCnt == 0 {
-		defaultDiskOption.custom(db)
-	}
-	if err := db.loader.load(db.set, db.diskOpt.LoaderCnt); err != nil {
+	if err := db.loader.load(db.set); err != nil {
 		return nil, err
 	}
 	db.start()
@@ -69,7 +67,7 @@ func Open(path string, options ...Option) (*DB, error) {
 }
 
 func (db *DB) Get(key string) (string, error) {
-	if len(key) > db.cxt.max_keysize {
+	if len(key) > db.cxt.limitOpt.MaxKeySize {
 		return "", ErrKeyLenTooLong
 	}
 	if v, ok := db.cache.Get(key); ok {
@@ -91,10 +89,10 @@ func (db *DB) Get(key string) (string, error) {
 }
 
 func (db *DB) Add(key, value string) error {
-	if len(key) > db.cxt.max_keysize {
+	if len(key) > db.cxt.limitOpt.MaxKeySize {
 		return ErrKeyLenTooLong
 	}
-	if len(value) > db.cxt.max_valuesize {
+	if len(value) > db.cxt.limitOpt.MaxValueSize {
 		return ErrValueLenTooLong
 	}
 	loc, err := db.write([]byte(key), []byte(value))
@@ -141,7 +139,7 @@ func (db *DB) Close() {
 }
 
 func (db *DB) start() {
-	for i := 0; i < db.diskOpt.ReaderCnt; i++ {
+	for i := 0; i < db.cxt.diskOpt.ReaderCnt; i++ {
 		db.closeWG.Add(1)
 		go func() {
 			for c := range db.readQ {

@@ -24,7 +24,9 @@ func TestReader(t *testing.T) {
 		length: 10,
 	}
 	cxt := &context{path: path,
-		max_filesize: 100}
+		limitOpt: LimitOption{
+			MaxFileSize: 100,
+		}}
 	bs := []byte("abcdefghijklmnopqrstuvwxyz0123456789")
 	if f, err := uOpenAppend(FT_Data, loc.fileno, cxt); err != nil {
 		t.Fatal()

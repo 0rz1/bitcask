@@ -29,11 +29,11 @@ func TestLimitOption(t *testing.T) {
 	}
 	db := &DB{cxt: &context{}}
 	if err := opt.custom(db); err == nil {
-		if db.cxt.max_filesize != opt.MaxFileSize {
+		if db.cxt.limitOpt.MaxFileSize != opt.MaxFileSize {
 			t.Error()
-		} else if db.cxt.max_keysize != opt.MaxKeySize {
+		} else if db.cxt.limitOpt.MaxKeySize != opt.MaxKeySize {
 			t.Error()
-		} else if db.cxt.max_valuesize != opt.MaxValueSize {
+		} else if db.cxt.limitOpt.MaxValueSize != opt.MaxValueSize {
 			t.Error()
 		}
 	} else {
@@ -48,7 +48,7 @@ func TestDiskOption(t *testing.T) {
 	}
 	db := &DB{cxt: &context{}}
 	if err := opt.custom(db); err == nil {
-		if db.diskOpt.ReaderCnt != opt.ReaderCnt {
+		if db.cxt.diskOpt.ReaderCnt != opt.ReaderCnt {
 			t.Error()
 		}
 	} else {

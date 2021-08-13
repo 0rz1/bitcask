@@ -21,11 +21,11 @@ func newLoader(cxt *context) *loader {
 	}
 }
 
-func (l *loader) load(set *set.Set, loaderCnt int) (err error) {
+func (l *loader) load(set *set.Set) (err error) {
 	wg := sync.WaitGroup{}
 	fq := make(chan *os.File)
 	defer close(fq)
-	for i := 0; i < loaderCnt; i++ {
+	for i := 0; i < l.cxt.diskOpt.LoaderCnt; i++ {
 		go func() {
 			for f := range fq {
 				if err == nil {
@@ -57,7 +57,7 @@ func loadFile(f *os.File, set *set.Set, cxt *context) (err error) {
 	defer f.Close()
 	hlen := len(locSeqHeader)
 	bufferSize := 4096
-	maxLocSeqSize := locationSeqSize(cxt.max_keysize)
+	maxLocSeqSize := locationSeqSize(cxt.limitOpt.MaxKeySize)
 	buffer := make([]byte, maxLocSeqSize+bufferSize)
 
 	var off = maxLocSeqSize

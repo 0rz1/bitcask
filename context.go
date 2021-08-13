@@ -6,11 +6,10 @@ import (
 )
 
 type context struct {
-	path          string
-	max_filesize  int
-	max_keysize   int
-	max_valuesize int
-	filenos       []int
+	path     string
+	limitOpt LimitOption
+	diskOpt  DiskOption
+	filenos  []int
 }
 
 func (c *context) maxno() int {

@@ -17,7 +17,7 @@ func TestAppendFile(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	cxt := &context{path: path, max_filesize: 100}
+	cxt := &context{path: path, limitOpt: LimitOption{MaxFileSize: 100}}
 	ap := appendFile{
 		ft:  FT_Data,
 		no:  10,
@@ -51,7 +51,7 @@ func TestAppender(t *testing.T) {
 		t.Fatal()
 	}
 	cxt := &context{path: path,
-		max_filesize: 100}
+		limitOpt: LimitOption{MaxFileSize: 100}}
 	app := &appender{
 		cxt: cxt,
 		no:  0,

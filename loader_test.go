@@ -28,8 +28,10 @@ func TestLoadFile(t *testing.T) {
 		{fileno: 5, offset: 20, length: 12},
 	}
 	cxt := &context{
-		path:        path,
-		max_keysize: 10,
+		path: path,
+		limitOpt: LimitOption{
+			MaxKeySize: 10,
+		},
 	}
 	if f, err := uOpenAppend(FT_Location, 101, cxt); err != nil {
 		t.Fatal()
